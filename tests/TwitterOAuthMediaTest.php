@@ -24,6 +24,7 @@ class TwitterOAuthMediaTest extends TestCase
             ACCESS_TOKEN,
             ACCESS_TOKEN_SECRET,
         );
+        $this->twitter->setApiVersion('1.1');
         $this->userId = explode('-', ACCESS_TOKEN)[0];
     }
 
@@ -74,7 +75,7 @@ class TwitterOAuthMediaTest extends TestCase
         $result = $this->twitter->upload(
             'media/upload',
             ['media' => $file_path, 'media_type' => 'video/mp4'],
-            true,
+            ['chunkedUpload' => true],
         );
         $this->assertEquals(201, $this->twitter->getLastHttpCode());
         $this->assertObjectHasAttribute('media_id_string', $result);
@@ -86,5 +87,23 @@ class TwitterOAuthMediaTest extends TestCase
         $this->assertEquals(200, $this->twitter->getLastHttpCode());
         $result = $this->twitter->post('statuses/destroy/' . $result->id_str);
         return $result;
+    }
+
+    /**
+     * @vcr testPostStatusesUpdateWithMediaChunkedException.json
+     */
+    public function testPostStatusesUpdateWithMediaChunkedException()
+    {
+        $this->expectException(
+            \Abraham\TwitterOAuth\TwitterOAuthException::class,
+        );
+        $this->expectErrorMessage('Missing "media_id_string"');
+        // Video source http://www.sample-videos.com/
+        $file_path = __DIR__ . '/video.mp4';
+        $result = $this->twitter->upload(
+            'media/upload',
+            ['media' => $file_path, 'media_type' => 'video/mp4'],
+            ['chunkedUpload' => true],
+        );
     }
 }
